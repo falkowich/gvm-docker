@@ -1,0 +1,15 @@
+version: '3'
+services:
+  
+ gvm10:
+    image: falkowich/gvm10:psql-dev
+    ports: 
+      - 443:443
+      - 9391:9391
+    restart: always
+    volumes:
+      - gvm:/usr/local/var/lib/gvm/
+      - psql:/var/lib/postgresql/
+volumes:
+  gvm:
+  psql:
