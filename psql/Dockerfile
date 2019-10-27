@@ -1,151 +1,197 @@
-FROM ubuntu:18.04
+FROM ubuntu:19.04
  
-COPY conf/openvassd.conf /usr/local/etc/openvas/openvassd.conf
-COPY script/entrypoint.sh /entrypoint.sh
+COPY conf/gvm.conf /etc/ld.so.conf.d/gvm.conf
+
 
 ENV DEBIAN_FRONTEND=noninteractive \
     GSE_PASSWORD=admin \
-    HOSTNAME=gs \
-    SRC_DIR=gse-git \
-    SRC_PATH=/root/${SRC_DIR} \
-    PGUSERNAME=root
-
+    HOSTNAME=gvm \
+    SRC_DIR=src \
+    SRC_PATH=/opt/gvm/src/ \
+    PGUSERNAME=gvm \
+    VIRTUAL_ENV=/opt/gvm \
+    PATH=/opt/gvm/bin:/opt/gvm/sbin:/opt/gvm/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
 
 RUN apt-get update ;\
     apt-get install apt-utils software-properties-common --no-install-recommends -yq ;\
+    add-apt-repository universe -y ;\
     apt-get dist-upgrade -yq ;\
     apt-get install alien \
-        cmake \
-        pkg-config \
-        libglib2.0-dev \
-        libgpgme11-dev \
-        uuid-dev \
-        libssh-gcrypt-dev \
-        libhiredis-dev \
-        gcc \
-        libgnutls28-dev \
-        libpcap-dev \
-        libgpgme-dev \
-        bison \
-        libksba-dev \
-        libsnmp-dev \
-        libgcrypt20-dev \
-        redis-server \
-        libsqlite3-dev \
-        libical-dev \
-        gnutls-bin \
-        doxygen \
-        nmap \
-        libmicrohttpd-dev \
-        libxml2-dev \
         apt-transport-https \
-        sqlfairy \
-        xmltoman \
-        xsltproc \
+        bison  \
+        cmake \
+        curl \
+        doxygen \
+        fakeroot \
+        gcc \
         gcc-mingw-w64 \
-        perl-base \
-        heimdal-dev \
-        libpopt-dev \
+        gettext \
+        git \
+        gnupg \
+        gnutls-bin \
         graphviz \
+        heimdal-dev \
+        libfreeradius-dev \
+        libgcrypt20-dev \
+        libglib2.0-dev \
+        libgnutls28-dev \
+        libgpgme-dev \
+        libgpgme11-dev \
+        libhiredis-dev\
+        libical2-dev \
+        libksba-dev \
+        libldap2-dev \
+        libmicrohttpd-dev \
+        libpcap-dev \
+        libpopt-dev \
+        libpq-dev \
+        libradcli-dev \
+        libsnmp-dev  \
+        libsnmp-dev \
+        libsqlite3-dev \
+        libssh-gcrypt-dev \
+        libssh-gcrypt-dev\
+        libxml2-dev \
+        nmap \
         nodejs \
-        rpm \
         nsis \
-        wget \
-        sshpass \
-        socat \
-        snmp \
+        perl-base \
+        pkg-config \
         postgresql \
         postgresql-contrib \
         postgresql-server-dev-all \
-        libpq-dev \
-        git \
-        libldap2-dev \
-        libfreeradius-dev \
-        sudo \
-        curl \
         python-polib \
+        python3-virtualenv \
+        python3-defusedxml \
+        python3-lxml \
+        python3-paramiko \
+        python3-pip \
+        python3-psutil \
+        redis-server \
+        rpm \
         rsync \
-        gettext \
+        smbclient \
+        snmp \
+        socat \
+        sqlfairy \
+        sshpass \
+        sudo \
+        uuid-dev \
+        wget \
         xmlstarlet \
+        xmltoman \
+        xsltproc \
         zip \
-        gnupg \
-        -yq ;\
-    apt-get install texlive-latex-extra --no-install-recommends -yq ;\
-    apt-get install texlive-fonts-recommended -yq
+        gosu \
+        -yq
 
-RUN curl --silent --show-error https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - ;\
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list ;\
+RUN apt-get install texlive-latex-extra --no-install-recommends -yq ;\
+    apt-get install texlive-fonts-recommended -yq 
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - ;\
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list ;\
     apt-get update ;\
-    apt-get install yarn -yq ;\
-    apt-get clean ;\
-    rm -rf /var/lib/apt/lists/*
+    apt-get install yarn -yq
+
+RUN mkdir /opt/gvm ;\
+    adduser gvm --disabled-password --home /opt/gvm/ --no-create-home --gecos '' ;\
+    usermod -aG redis gvm ;\
+    chown gvm:gvm /opt/gvm/ -R
+
+RUN echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/opt/gvm/sbin"' >> /etc/sudoers ;\
+    echo 'gvm ALL = NOPASSWD: /opt/gvm/sbin/openvas' >> /etc/sudoers
+
+USER gvm
+
 
 RUN mkdir ${SRC_PATH} -p ;\
     cd ${SRC_PATH} ;\
-    wget -O gvm-libs.tar.gz https://github.com/greenbone/gvm-libs/archive/v10.0.1.tar.gz ;\
-    wget -O openvas.tar.gz https://github.com/greenbone/openvas/archive/v6.0.1.tar.gz ;\
-    wget -O gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v8.0.1.tar.gz ;\
-    wget -O gsa.tar.gz https://github.com/greenbone/gsa/archive/v8.0.1.tar.gz ;\
-    wget -O openvas-smb.tar.gz https://github.com/greenbone/openvas-smb/archive/v1.0.5.tar.gz ;\
-    wget -O ospd.tar.gz https://github.com/greenbone/ospd/archive/v1.3.2.tar.gz
+    wget -O gvm-libs-11.0.0.tar.gz  https://github.com/greenbone/gvm-libs/archive/v11.0.0.tar.gz ;\
+    wget -O openvas-7.0.0.tar.gz https://github.com/greenbone/openvas/archive/v7.0.0.tar.gz ;\
+    wget -O gvmd-9.0.0.tar.gz https://github.com/greenbone/gvmd/archive/v9.0.0.tar.gz ;\
+    wget -O openvas-smb-1.0.5.tar.gz https://github.com/greenbone/openvas-smb/archive/v1.0.5.tar.gz ;\
+    wget -O gsa-9.0.0.tar.gz https://github.com/greenbone/gsa/archive/v9.0.0.tar.gz ;\
+    wget -O ospd-openvas-1.0.0.tar.gz https://github.com/greenbone/ospd-openvas/archive/v1.0.0.tar.gz ;\
+    wget -O ospd-2.0.0.tar.gz https://github.com/greenbone/ospd/archive/v2.0.0.tar.gz
 
 RUN cd ${SRC_PATH} ;\
     find . -name \*.gz -exec tar zxvfp {} \;
 
-
-RUN  cd ${SRC_PATH}/gvm-libs-* ;\
+RUN cd ${SRC_PATH}\gvm-libs-11.0.0 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
     mkdir build ;\
     cd build ;\
-    cmake .. ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
+    make ;\
+    make doc ;\
+    make install ;\
+    cd ${SRC_PATH}
+
+RUN cd ${SRC_PATH}\openvas-smb-1.0.5 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
+    mkdir build ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
+    make ;\
+    make install ;\
+    cd ${SRC_PATH}
+
+RUN cd ${SRC_PATH}\openvas-7.0.0 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
+    mkdir build ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
+    make ;\
+    make doc ;\
+    make install ;\
+    cd ${SRC_PATH}
+
+COPY conf/openvas.conf /opt/gvm/etc/openvas/openvas.conf 
+
+RUN greenbone-nvt-sync
+
+RUN cd ${SRC_PATH}\gvmd-9.0.0 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
+    mkdir build ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
     make doc-full ;\
     make install ;\
     cd ${SRC_PATH}
 
-RUN  cd ${SRC_PATH}/openvas-smb-* ;\
-    mkdir build ;\
-    cd build ;\
-    cmake .. ;\
-    make ;\
-    make install ;\
-    cd ${SRC_PATH}
 
-RUN  cd ${SRC_PATH}/openvas-* ;\
+RUN cd ${SRC_PATH}/gsa-9.0.0 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
     mkdir build ;\
-    cd build ;\
-    cmake .. ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
     make doc-full ;\
     make install ;\
+    touch /opt/gvm/var/log/gvm/gsad.log ;\
     cd ${SRC_PATH}
 
-COPY conf/redis.config /etc/redis/redis.conf
+RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 
-RUN service redis-server restart
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN greenbone-nvt-sync 
-
-RUN cd ${SRC_PATH}/gvmd-* ;\
-    mkdir build ;\
-    cd build ;\
-    cmake -DBACKEND=POSTGRESQL .. ;\
-    make ;\
-    make doc-full ;\
-    make install ;\
+RUN cd ${SRC_PATH}\ospd-2.0.0 ;\
+    pip3 install . ;\
     cd ${SRC_PATH}
+
+RUN cd ${SRC_PATH}\ospd-openvas-1.0.0 ;\
+    pip3 install . ;\
+    cd ${SRC_PATH}
+
+#RUN rm {SRC_PATH}/ -rf
+
+COPY script/entrypoint.sh /entrypoint.sh 
+
+USER root
 
 RUN ldconfig
 
-RUN cd ${SRC_PATH}/gsa-* ;\
-    mkdir build ;\
-    cd build ;\
-    cmake .. ;\
-    make ;\
-    make doc-full ;\
-    make install ;\
-    cd ${SRC_PATH}
-
-RUN rm  /root/${SRC_PATH}/ -rf
-
 CMD /entrypoint.sh
-EXPOSE 80 443 9391
+
+EXPOSE 443 9391

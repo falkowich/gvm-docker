@@ -1,15 +1,26 @@
 version: '3'
 services:
-  
- gvm10:
-    image: falkowich/gvm10:psql-dev
+ 
+  gvm11:
+    image: falkowich/gvm:dev
     ports: 
       - 443:443
       - 9391:9391
-    restart: always
+    restart: unless-stopped
     volumes:
       - gvm:/usr/local/var/lib/gvm/
       - psql:/var/lib/postgresql/
+      - redis:/run/redis-openvas/
+    depends_on:
+      - redis
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    volumes:
+      - redis:/run/redis-openvas/
+
 volumes:
   gvm:
   psql:
+  redis:
