@@ -7,7 +7,7 @@ services:
       - 9391:9391
     volumes:
       - gvmd:/opt/gvm/
-      - redis_sock:/var/run/redis-openvas
+      - redis_sock:/var/run/redis-openvas/
       - psql_sock:/var/run/postgresql/
     depends_on:
       - redis
@@ -34,12 +34,16 @@ services:
     image: falkowich/openvas:dev
     volumes:
       - redis_sock:/var/run/redis-openvas
+      - psql_sock:/var/run/postgresql/
+    depends_on:
+      - redis
+      - psql-uuid
 
   redis:
     image: redis:5.0
     command: redis-server --port 0 --unixsocket /var/run/redis/redis.sock --unixsocketperm 755
     volumes:
-      - redis_sock:/var/run/redis-openvas
+      - redis_sock:/var/run/redis-openvas/
 
 volumes:
   gvmd:

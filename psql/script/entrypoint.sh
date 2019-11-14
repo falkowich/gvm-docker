@@ -2,7 +2,9 @@
 
 set -o pipefail
 
-gosu gvm export PATH=/opt/gvm/bin:/opt/gvm/sbin:/opt/gvm/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
+mkdir /var/run/postgresql/ -p ;\
+touch /var/run/postgresql/.s.PGSQL.5432 ;\
+chmod 0666 /var/run/postgresql/ -R ;\
 service postgresql restart 
 
 echo "===> Checking if db is ready"
@@ -19,8 +21,3 @@ else
 EOSQL
 fi
 
-# WHATTODOWITTHIS?
-if [ -z "$BUILD" ]; then
-  echo "Tailing logs"
-  tail -F /opt/gvm/var/log/gvm/*
-fi

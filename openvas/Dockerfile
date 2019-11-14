@@ -56,8 +56,6 @@ RUN apt-get update ;\
         nsis \
         perl-base \
         pkg-config \
-        postgresql \
-        postgresql-contrib \
         postgresql-server-dev-all \
         python-polib \
         python3-virtualenv \
@@ -88,17 +86,22 @@ RUN mkdir /opt/gvm ;\
     adduser gvm --disabled-password --home /opt/gvm/ --no-create-home --gecos '' ;\
     addgroup redis ;\
     usermod -aG redis gvm ;\
+    mkdir -p /opt/gvm/var/log/gvm ;\
     chown gvm:gvm /opt/gvm/ -R
 
 RUN echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/opt/gvm/sbin"' >> /etc/sudoers ;\
     echo 'gvm ALL = NOPASSWD: /opt/gvm/sbin/openvas' >> /etc/sudoers
+
+RUN apt install virtualenv
 
 USER gvm
 
 RUN mkdir ${SRC_PATH} -p ;\
     cd ${SRC_PATH} ;\
     wget -O gvm-libs-11.0.0.tar.gz  https://github.com/greenbone/gvm-libs/archive/v11.0.0.tar.gz ;\
+    wget -O openvas-7.0.0.tar.gz https://github.com/greenbone/openvas/archive/v7.0.0.tar.gz ;\
     wget -O gvmd-9.0.0.tar.gz https://github.com/greenbone/gvmd/archive/v9.0.0.tar.gz ;\
+    wget -O openvas-smb-1.0.5.tar.gz https://github.com/greenbone/openvas-smb/archive/v1.0.5.tar.gz ;\
     wget -O ospd-openvas-1.0.0.tar.gz https://github.com/greenbone/ospd-openvas/archive/v1.0.0.tar.gz ;\
     wget -O ospd-2.0.0.tar.gz https://github.com/greenbone/ospd/archive/v2.0.0.tar.gz
 
@@ -111,7 +114,6 @@ RUN cd ${SRC_PATH}\gvm-libs-11.0.0 ;\
     cd build ;\
     cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
-    make doc ;\
     make install ;\
     cd ${SRC_PATH}
 
@@ -121,22 +123,37 @@ RUN cd ${SRC_PATH}\gvmd-9.0.0 ;\
     cd build/ ;\
     cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
-    make doc-full ;\
     make install ;\
     cd ${SRC_PATH}
 
-RUN src ;\
+RUN cd ${SRC_PATH}\openvas-smb-1.0.5 ;\
     export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
-    virtualenv --python python3.7  /opt/gvm/bin/ospd-scanner/ ;\
-    source /opt/gvm/bin/ospd-scanner/bin/activate
+    mkdir build ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
+    make ;\
+    make install ;\
+    cd /opt/gvm/src
 
-RUN cd ${SRC_PATH}\ospd-2.0.0 ;\
-pip3 install . ;\
-cd ${SRC_PATH}
 
-RUN cd ${SRC_PATH}\ospd-openvas-1.0.0 ;\
-pip3 install . ;\
-cd ${SRC_PATH}
+RUN  cd ${SRC_PATH}\openvas-7.0.0 ;\
+    export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
+    mkdir build ;\
+    cd build/ ;\
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
+    make ;\
+    make install ;\
+    cd /opt/gvm/src
+
+
+RUN virtualenv --python python3.7  /opt/gvm/bin/ospd-scanner/
+
+RUN /bin/bash -c "source /opt/gvm/bin/ospd-scanner/bin/activate ;\
+    cd ${SRC_PATH}\ospd-2.0.0 ;\
+    pip3 install . ;\
+    cd ${SRC_PATH}\ospd-openvas-1.0.0 ;\
+    pip3 install . ;\
+    cd ${SRC_PATH}"
 
 COPY script/entrypoint.sh /entrypoint.sh 
 

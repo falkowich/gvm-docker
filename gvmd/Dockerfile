@@ -53,8 +53,6 @@ RUN apt-get update ;\
         nsis \
         perl-base \
         pkg-config \
-        postgresql \
-        postgresql-contrib \
         postgresql-server-dev-all \
         python-polib \
         python3-virtualenv \
