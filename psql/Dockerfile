@@ -122,6 +122,4 @@ USER root
 
 RUN ldconfig
 
-USER gvm
-
 CMD /entrypoint.sh

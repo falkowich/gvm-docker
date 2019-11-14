@@ -19,43 +19,6 @@ else
 EOSQL
 fi
 
-# Check if ssl certs are in place (it's rather late and I will fix this more elegant later[tm])
-echo "===> Waiting to get certs ready"
-until gosu gvm /opt/gvm/bin/gvm-manage-certs -V -q
-do
-  gosu gvm /opt/gvm/bin/gvm-manage-certs -af
-done
-
-# Check if admin exists, if not create admin
-if $(gosu gvm /opt/gvm/sbin/gvmd --get-users | grep -q 'admin') ; then
-    echo "---> Admin already exists.."
-else
-    echo "---> Creating admin with new password"
-    gosu gvm  /opt/gvm/sbin/gvmd --create-user=admin --password=admin
-fi
-
-
-# Try to start certdata and scapdata sync
-#echo "---> Starting Certsync.." ;\
-#gosu gvm  /opt/gvm/sbin/greenbone-certdata-sync ;\
-#echo "---> Starting Scapsync.." ;\
-#gosu gvm  /opt/gvm/sbin/greenbone-scapdata-sync
-
-
-# Start GVM stuffs
-echo "---> Starting GVMD"
-gosu gvm gvmd --listen=0.0.0.0 --port=9391 --osp-vt-update=/opt/gvm/var/run/ospd.sock
-echo "---> Starting GSAD"
-gsad --mlisten=0.0.0.0 --mport=9391
-
-echo "---> Starting ospd-openvas"
-
-gosu gvm ospd-openvas -f --key-file /opt/gvm/var/lib/gvm/private/CA/serverkey.pem \
-      --cert-file /opt/gvm/var/lib/gvm/CA/servercert.pem \
-      --ca-file /opt/gvm/var/lib/gvm/CA/cacert.pem \
-      --pid-file /opt/gvm/var/run/ospd.pid \
-      --unix-socket=/opt/gvm/var/run/ospd.sock
-
 # WHATTODOWITTHIS?
 if [ -z "$BUILD" ]; then
   echo "Tailing logs"
