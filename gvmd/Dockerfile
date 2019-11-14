@@ -2,14 +2,13 @@ FROM ubuntu:19.04
  
 COPY conf/gvm.conf /etc/ld.so.conf.d/gvm.conf
 
+
 ENV DEBIAN_FRONTEND=noninteractive \
     HOSTNAME=gvmd \
     SRC_DIR=src \
     SRC_PATH=/opt/gvm/src/ \
     PATH=$PATH:/opt/gvm/bin:/opt/gvm/sbin:/opt/gvm/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
 
-RUN apt-get update 
-    
 RUN apt-get update ;\
     apt-get install apt-utils software-properties-common --no-install-recommends -yq ;\
     add-apt-repository universe -y ;\
@@ -82,13 +81,24 @@ RUN apt-get update ;\
         gosu \
         -yq
 
-RUN apt-get install              postgresql-server-dev-all    libical-dev -yq
+RUN apt-get install texlive-latex-extra --no-install-recommends -yq ;\
+    apt-get install texlive-fonts-recommended -yq 
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - ;\
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list ;\
+    apt-get update ;\
+    apt-get install yarn -yq
 
 RUN mkdir /opt/gvm ;\
     adduser gvm --disabled-password --home /opt/gvm/ --no-create-home --gecos '' ;\
+    usermod -aG redis gvm ;\
     chown gvm:gvm /opt/gvm/ -R
 
+RUN echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/opt/gvm/sbin"' >> /etc/sudoers ;\
+    echo 'gvm ALL = NOPASSWD: /opt/gvm/sbin/openvas' >> /etc/sudoers
+
 USER gvm
+
 
 RUN mkdir ${SRC_PATH} -p ;\
     cd ${SRC_PATH} ;\
@@ -104,6 +114,7 @@ RUN cd ${SRC_PATH}\gvm-libs-11.0.0 ;\
     cd build ;\
     cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
+    make doc ;\
     make install ;\
     cd ${SRC_PATH}
 
@@ -113,8 +124,10 @@ RUN cd ${SRC_PATH}\gvmd-9.0.0 ;\
     cd build/ ;\
     cmake -DCMAKE_INSTALL_PREFIX=/opt/gvm .. ;\
     make ;\
+    make doc-full ;\
     make install ;\
     cd ${SRC_PATH}
+
 
 COPY script/entrypoint.sh /entrypoint.sh 
 
@@ -125,3 +138,5 @@ RUN ldconfig
 USER gvm
 
 CMD /entrypoint.sh
+
+EXPOSE 443 9391

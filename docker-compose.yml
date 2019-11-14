@@ -2,36 +2,48 @@ version: '3'
 services:
  
   gvmd:
-    image: falkowich/gvm-gvmd:dev
+    image: falkowich/gvmd:dev
     ports: 
       - 9391:9391
     volumes:
       - gvmd:/opt/gvm/
-      - redis:/var/run/redis-openvas
+      - redis_sock:/var/run/redis-openvas
+      - psql_sock:/var/run/postgresql/
     depends_on:
       - redis
+      - psql-uuid
 
-  psql:
-    image: falkowich/gvm-psql:dev
+  psql-uuid:
+    image: falkowich/psql-uuid:dev
+    #build: ./psql/
+    environment:
+      POSTGRES_DB: gvmd
+      POSTGRES_USER: gvm
+
     volumes:
       - psql:/var/lib/postgresql/
+      - psql_sock:/var/run/postgresql/
 
-  gsad:
-    image: falkowich/gvm-gsad:dev
-    ports: 
-      - 443:443
-
-  openvas:
-    image: falkowich/gvm-openvas:dev
-      - redis:/var/run/redis-openvas
-
+#  gsad:
+#    #image: falkowich/gvm-gsad:dev
+#    build: ./gsad/
+#    ports: 
+#      - 443:443
+#
+#  openvas:
+#    #image: falkowich/gvm-openvas:dev
+#    build: ./openvas/
+#      - redis:/var/run/redis-openvas
+#
   redis:
     image: redis:5.0
-    command: redis-server --port 0 --unixsocket /var/run/redis-openvas/redis.sock --unixsocketperm 755
+    command: redis-server --port 0 --unixsocket /var/run/redis/redis.sock --unixsocketperm 755
     volumes:
-      - redis:/var/run/redis-openvas
+      - redis_sock:/var/run/redis-openvas
 
-  volumes:
-    gvmd:
-    psql:
-    redis:
+volumes:
+  gvmd:
+  psql:
+  redis_sock:
+  psql_sock:
+#
