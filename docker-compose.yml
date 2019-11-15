@@ -1,53 +1,15 @@
 version: '3'
 services:
  
-  gvmd:
-    image: falkowich/gvmd:dev
+  gvm:
+    image: falkowich/gvm:dev
     ports: 
+      - 443:443
       - 9391:9391
+    restart: always
     volumes:
-      - gvmd:/opt/gvm/
-      - redis_sock:/var/run/redis-openvas/
-      - psql_sock:/var/run/postgresql/
-    depends_on:
-      - redis
-      - psql-uuid
-
-  psql-uuid:
-    image: falkowich/psql-uuid:dev
-    #build: ./psql/
-    environment:
-      POSTGRES_DB: gvmd
-      POSTGRES_USER: gvm
-
-    volumes:
+      - gvm:/usr/local/var/lib/gvm/
       - psql:/var/lib/postgresql/
-      - psql_sock:/var/run/postgresql/
-
-#  gsad:
-#    #image: falkowich/gvm-gsad:dev
-#    build: ./gsad/
-#    ports: 
-#      - 443:443
-#
-  openvas:
-    image: falkowich/openvas:dev
-    volumes:
-      - redis_sock:/var/run/redis-openvas
-      - psql_sock:/var/run/postgresql/
-    depends_on:
-      - redis
-      - psql-uuid
-
-  redis:
-    image: redis:5.0
-    command: redis-server --port 0 --unixsocket /var/run/redis/redis.sock --unixsocketperm 755
-    volumes:
-      - redis_sock:/var/run/redis-openvas/
-
 volumes:
-  gvmd:
+  gvm:
   psql:
-  redis_sock:
-  psql_sock:
-#
