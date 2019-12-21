@@ -1,10 +1,12 @@
-# gvm-docker
+# gvm-docker 
 
 ## WIP - DO NOT USE IN PROD:
 
 ### To try this out:
 
 #### Download and build the image.
+
+This is for GVM11 - GSE
 
 ```
 git clone https://github.com/falkowich/gvm-docker.git
