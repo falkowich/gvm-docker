@@ -6,7 +6,7 @@ services:
     ports: 
       - 443:443
       - 9391:9391
-    restart: always
+        #    restart: never
     volumes:
       - gvm:/usr/local/var/lib/gvm/
       - psql:/var/lib/postgresql/

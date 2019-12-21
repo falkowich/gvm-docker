@@ -1,92 +1,27 @@
-FROM ubuntu:19.04
- 
-COPY conf/gvm.conf /etc/ld.so.conf.d/gvm.conf
+FROM debian:10.2
 
+COPY conf/gvm.conf /etc/ld.so.conf.d/gvm.conf
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOSTNAME=gvmd \
-    SRC_DIR=src \
     SRC_PATH=/opt/gvm/src/ \
     PATH=$PATH:/opt/gvm/bin:/opt/gvm/sbin:/opt/gvm/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
 
 RUN apt-get update ;\
     apt-get install apt-utils software-properties-common --no-install-recommends -yq ;\
-    add-apt-repository universe -y ;\
     apt-get dist-upgrade -yq ;\
-    apt-get install alien \
-        apt-transport-https \
-        bison  \
-        cmake \
-        curl \
-        doxygen \
-        fakeroot \
-        gcc \
-        gcc-mingw-w64 \
-        gettext \
-        git \
-        gnupg \
-        gnutls-bin \
-        graphviz \
-        heimdal-dev \
-        libfreeradius-dev \
-        libgcrypt20-dev \
-        libglib2.0-dev \
-        libgnutls28-dev \
-        libgpgme-dev \
-        libgpgme11-dev \
-        libhiredis-dev\
-        libical2-dev \
-        libksba-dev \
-        libldap2-dev \
-        libmicrohttpd-dev \
-        libpcap-dev \
-        libpopt-dev \
-        libpq-dev \
-        libradcli-dev \
-        libsnmp-dev  \
-        libsnmp-dev \
-        libsqlite3-dev \
-        libssh-gcrypt-dev \
-        libxml2-dev \
-        nmap \
-        nodejs \
-        nsis \
-        perl-base \
-        pkg-config \
-        postgresql \
-        postgresql-common \
-        postgresql-server-dev-all \
-        python-polib \
-        python3-virtualenv \
-        python3-defusedxml \
-        python3-lxml \
-        python3-paramiko \
-        python3-pip \
-        python3-psutil \
-        redis-server \
-        rpm \
-        rsync \
-        smbclient \
-        snmp \
-        socat \
-        sqlfairy \
-        sshpass \
-        sudo \
-        uuid-dev \
-        wget \
-        xmlstarlet \
-        xmltoman \
-        xsltproc \
-        zip \
-        gosu \
-        virtualenv \
-        -yq
+    apt-get install cmake pkg-config libglib2.0-dev libgpgme-dev libgnutls28-dev uuid-dev libssh-gcrypt-dev \
+            libldap2-dev doxygen graphviz libradcli-dev libhiredis-dev libpcap-dev bison libksba-dev libsnmp-dev \
+            gcc-mingw-w64 heimdal-dev libpopt-dev xmltoman redis-server xsltproc libical-dev postgresql \
+            postgresql-contrib postgresql-server-dev-all gnutls-bin nmap rpm nsis curl wget fakeroot gnupg \
+            sshpass socat snmp smbclient libmicrohttpd-dev libxml2-dev python-polib gettext rsync \
+            python3-paramiko python3-lxml python3-defusedxml python3-pip python3-psutil virtualenv sudo -yq
 
 RUN apt-get install texlive-latex-extra --no-install-recommends -yq ;\
     apt-get install texlive-fonts-recommended -yq 
 
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - ;\
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list ;\
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg |  apt-key add -  ;\
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list ;\
     apt-get update ;\
     apt-get install yarn -yq
 
@@ -146,14 +81,17 @@ RUN cd ${SRC_PATH}\openvas-7.0.0 ;\
 USER root
 
 RUN ldconfig ;\
-    cp /etc/redis/redis.conf /etc/redis/redis.orig ;\
-    cp /opt/gvm/src/openvas-7.0.0/config/redis-openvas.conf /etc/redis/ ;\
-    chown redis:redis /etc/redis/redis-openvas.conf ;\
+    mkdir /var/run/redis-openvas ;\
+    chown redis.redis /var/run/redis-openvas -R ;\
+    cp /opt/gvm/src/openvas-7.0.0/config/redis-openvas.conf /etc/redis/redis.conf ;\
+    chown redis:redis /etc/redis/redis.conf ;\
     echo "db_address = /run/redis-openvas/redis.sock" > /opt/gvm/etc/openvas/openvas.conf 
 
 RUN echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/opt/gvm/sbin"' >> /etc/sudoers ;\
     echo 'gvm ALL = NOPASSWD: /opt/gvm/sbin/openvas' >> /etc/sudoers ;\
     echo 'gvm ALL = NOPASSWD: /opt/gvm/sbin/gsad' >> /etc/sudoers
+
+RUN cat /etc/sudoers
 
 USER gvm
 
@@ -170,9 +108,15 @@ RUN cd ${SRC_PATH}\gvmd-9.0.0 ;\
     make install ;\
     cd /opt/gvm/src
 
-RUN greenbone-certdata-sync ;\
-    greenbone-scapdata-sync
+# TODO - This is beq I cant get the sync's to work.. Ugly as ****. 
 
+RUN greenbone-certdata-sync
+RUN greenbone-certdata-sync 
+RUN greenbone-certdata-sync 
+
+RUN greenbone-scapdata-sync 
+RUN greenbone-scapdata-sync 
+RUN greenbone-scapdata-sync 
 
 RUN cd ${SRC_PATH}\gsa-9.0.0 ;\
     export PKG_CONFIG_PATH=/opt/gvm/lib/pkgconfig:$PKG_CONFIG_PATH ;\
@@ -196,6 +140,8 @@ RUN /bin/bash -c "source /opt/gvm/bin/ospd-scanner/bin/activate ;\
     cd ${SRC_PATH}"
 
 COPY script/entrypoint.sh /entrypoint.sh 
+
+USER root
 
 CMD /entrypoint.sh
 
