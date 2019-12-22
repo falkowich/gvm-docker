@@ -26,7 +26,7 @@ Until things settles in this repo and is functioning as is should :)
 
 ```
 docker-compose exec gvm /bin/bash
-sudo su - gvm
+su - gvm
 export PATH=/opt/gvm/bin:/opt/gvm/sbin:/opt/gvm/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 gvmd --create-scanner='TEST OPENVAS Scanner' --scanner-type='OpenVas' --scanner-host=/opt/gvm/var/run/ospd.sock
 ```
